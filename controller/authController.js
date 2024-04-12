@@ -228,6 +228,7 @@ export const loginAuth = async (req, res)=>{
 export const updateProfile = async (req, res) => {
     try {
         const {userId} = req.body.user
+        const {id} = req.params
         const {
             firstName,
             lastName,
@@ -237,6 +238,7 @@ export const updateProfile = async (req, res) => {
             phone,
             gender,
             birthDay,
+            joinDate,
             street,
             state,
             country,
@@ -248,7 +250,17 @@ export const updateProfile = async (req, res) => {
             paymentType
         } = req.body
         const file = req.file
-        const user = await AuthUser.findById(userId)
+
+        const verifyUser = await AuthUser.findById(userId)
+
+        if(!verifyUser){
+            return res.status(403).json({
+                success: false,
+                message: 'Authorization failed!'
+            })
+        }
+
+        const user = await AuthUser.findById(id)
 
         if(!user){
             return res.status(403).json({
@@ -274,6 +286,7 @@ export const updateProfile = async (req, res) => {
         user.phone = phone;
         user.gender = gender;
         user.birthDay = birthDay;
+        user.joinDate = joinDate;
 
         if (!user.address) {
             user.address = {};
@@ -396,6 +409,7 @@ export const getUser = async (req, res) => {
     try {
         const {userId} = req.body.user
         const {id} = req.params
+        console.log(id)
         const user = await AuthUser.findById(id ? id : userId)
 
         if(!user){
@@ -652,3 +666,51 @@ export const resetPassword = async (req, res) => {
     }
 }
 
+export const changePassword = async (req, res) => {
+    try {
+        const {userId} = req.body.user
+        const {oldPassword, newPassword} = req.body
+        
+        const user = await AuthUser.findById(userId)
+
+        if(!user){
+            return res.status(403).json({
+                success: false,
+                message: 'Authorization failed!'
+            })
+        }
+
+        const compare = await comparePassword(oldPassword, user.password)
+
+        if(!compare){
+            return res.status(403).json({
+                success: false,
+                message: 'Incorrect old password!'
+            })
+        }
+
+        const hash = await hashPassword(newPassword)
+
+        const update = await AuthUser.findByIdAndUpdate({_id: userId},{
+            password: hash
+        },{new: true})
+
+        if(!update){
+            return res.status(403).json({
+                success: false,
+                message: 'Error updating password, try again!'
+            })
+        }
+
+        res.status(200).json({
+            success: true,
+            message: 'Password changed successfully!',
+        })
+    } catch (error) {
+        console.log(error)
+        res.status(500).json({
+            success: false,
+            message: 'Internal server error!'
+        })
+    }
+}

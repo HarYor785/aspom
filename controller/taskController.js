@@ -5,6 +5,7 @@ import Holiday from "../models/holidayModel.js";
 import LeaveRequest from "../models/leaveRequest.js";
 import moment from 'moment'
 import { assignJwt } from "../utils/index.js"
+import { tasks_v1 } from "googleapis";
 
 
 
@@ -557,53 +558,37 @@ export const updateTasksStatistics = async () => {
             // Find all users
             const allUsers = await AuthUser.find();
 
-            // Iterate through all users
-            for (const user of allUsers) {
-                // Check if the user is on leave
-                const leave = await LeaveRequest.find({
-                    startDate: { $lte: today },
-                    endDate: { $gte: today },
-                    $or: [
-                        { uhApproval: 'Approved' },
-                        { hrApproval: 'Approved' },
-                        { adminApproval: 'Approved' },
-                    ]
-                });
-
-                // If the user is on leave, skip report update
-                if (leave) {
-                    console.log(`No report update needed. User ${user.username} is on leave.`);
-                    continue; // Skip to the next user
-                }
-
-                // Find the report for the user for today
-                const task = await Tasks.findOne({
+            await Promise.all(allUsers.map(async(user)=>{
+                let tasks = await Tasks.findOne({
                     'user': user._id,
-                    'todolist.date': { $gte: startOfDay, $lte: endOfDay },
+                    // 'todolist.date': { $gte: startOfDay, $lte: endOfDay },
                     month,
                     year
-                });
+                })
 
-                // If no report found for today, create a new one
-                if (!task) {
-                    const newTask = new Tasks({
+                // If no task found for today, create a new one
+                if (!tasks) {
+                    tasks = new Tasks({
                         user: user._id,
                         month,
                         year,
                         todolist: []
                     });
-                    await newTask.save();
-                    continue; // Skip to the next user
+                    await tasks.save();
                 }
 
-                // Update totalMissed for the user if report not found for today
-                if (!task.todolist.some(item => item.date.toDateString() === today.toDateString())) {
-                    task.totalNotMarkedDays++;
-                    await task.save();
+                // Update totalMissed for the user if task not found for today
+                if (!tasks.todolist || !tasks.todolist.some(item => item.date.toDateString() === today.toDateString())) {
+                    tasks.totalNotMarkedDays++;
+                    console.log('Incrementing...');
+                    await tasks.save();
                 }
-            }
+            }))
+
+            console.log('Task Updated!')
+
         } else {
-            console.log('No report update needed. Today is Saturday or Sunday.');
+            console.log('No task update needed. Today is Saturday or Sunday.');
         }
 
     } catch (error) {

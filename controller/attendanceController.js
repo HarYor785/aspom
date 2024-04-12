@@ -105,9 +105,15 @@ export const clockIn = async (req, res) => {
         
         // Fetch the user with populated fields
         const getUser = await AuthUser.findById(userId)
-        .populate('attendance') // Populate attendance
-        .populate('todolist') // Populate tasks
-        .populate('reports');
+        .populate({
+            path: 'attendance'
+        }) // Populate attendance
+        .populate({
+            path: 'todolist'
+        }) // Populate tasks
+        .populate({
+            path: 'reports'
+        });
 
         getUser.password = undefined
 
@@ -212,9 +218,15 @@ export const clockOut = async (req, res) => {
 
         // Fetch the user with populated fields
         const getUser = await AuthUser.findById(userId)
-        .populate('attendance') // Populate attendance
-        .populate('todolist') // Populate tasks
-        .populate('reports');
+        .populate({
+            path: 'attendance'
+        }) // Populate attendance
+        .populate({
+            path: 'todolist'
+        }) // Populate tasks
+        .populate({
+            path: 'reports'
+        });
 
         getUser.password = undefined
 

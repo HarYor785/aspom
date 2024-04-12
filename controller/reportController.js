@@ -268,51 +268,34 @@ export const updateReportStatistics = async ()=>{
             // Find all users
             const allUsers = await AuthUser.find();
 
-            // Iterate through all users
-            for (const user of allUsers) {
-                // Check if the user is on leave
-                const leave = await LeaveRequest.find({
-                    startDate: { $lte: today },
-                    endDate: { $gte: today },
-                    $or: [
-                        { uhApproval: 'Approved' },
-                        { hrApproval: 'Approved' },
-                        { adminApproval: 'Approved' },
-                    ]
-                });
-
-                // If the user is on leave, skip report update
-                if (leave) {
-                    console.log(`No report update needed. User ${user.username} is on leave.`);
-                    continue; // Skip to the next user
-                }
-
-                // Find the report for the user for today
-                const report = await Reports.findOne({
+            await Promise.all(allUsers.map(async(user)=>{
+                let report = await Reports.findOne({
                     'user': user._id,
-                    'reports.date': { $gte: startOfDay, $lte: endOfDay },
                     month,
                     year
-                });
+                })
 
-                // If no report found for today, create a new one
+                // If no task found for today, create a new one
                 if (!report) {
-                    const newReport = new Reports({
+                    report = new Reports({
                         user: user._id,
                         month,
                         year,
                         reports: []
                     });
-                    await newReport.save();
-                    continue; // Skip to the next user
-                }
-
-                // Update totalMissed for the user if report not found for today
-                if (!report.reports.some(item => item.date.toDateString() === today.toDateString())) {
-                    report.totalMissed++;
                     await report.save();
                 }
-            }
+
+                // Update totalMissed for the user if task not found for today
+                if (!report.reports || !report.reports.some(item => item.date.toDateString() === today.toDateString())) {
+                    report.totalMissed++;
+                    console.log('Incrementing...');
+                    await report.save();
+                }
+            }))
+
+            console.log('Report Updated!')
+
         } else {
             console.log('No report update needed. Today is Saturday or Sunday.');
         }

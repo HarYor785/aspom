@@ -95,17 +95,17 @@ const io = app.get('io');
 // cron.schedule('30 20 * * *', async () => {
 cron.schedule('0 18 * * *', async () => {
     console.log('Running attendance update.');
-    dailyAttendanceUpdate();
+    await dailyAttendanceUpdate();
 });
 
 cron.schedule('0 12 * * *', async () => {
     console.log('Running task update at 12 PM.');
-    updateTasksStatistics();
+    await updateTasksStatistics();
 });
 
 cron.schedule('59 23 * * *', async () => {
     console.log('Running report update at 11:59 PM.');
-    updateReportStatistics();
+    await updateReportStatistics();
 });
 
 // Schedule the cron job to trigger 10 minutes before 12 PM every day for todolist
@@ -115,7 +115,7 @@ cron.schedule('50 11 * * *', () => {
 });
 
 
-// // Schedule the cron job to trigger 10 minutes before 6 PM every day for daily reports
+// Schedule the cron job to trigger 10 minutes before 6 PM every day for daily reports
 cron.schedule('50 17 * * *', () => {
     // Emit a socket event to all connected clients
     io.emit('notification', { message: 'A reminder to submit your daily report before clocking out!', activities: true });
