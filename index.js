@@ -48,6 +48,9 @@ app.use(express.static('public'))
 
 dbConnection()
 
+// Use middleware to trust the proxy
+app.set('trust proxy', true);
+
 // app.use(requestIp.mw()) // Get client IP address
 // Define the whitelisted WiFi network IP address
 // const wifiNetworkIP = '192.168.11.21'; // Example IP address of the WiFi network
@@ -55,7 +58,7 @@ const wifiNetworkIP = '172.20.10.8'; // Example IP address of the WiFi network
 
 // Middleware function to check the user's IP address against the WiFi network IP
 const restrictToWiFiNetwork = (req, res, next) => {
-    const userIP = req.ip
+    const userIP = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
     console.log('The user IP', userIP)
 
     if (userIP === wifiNetworkIP || userIP === `::ffff:${wifiNetworkIP}`) {
