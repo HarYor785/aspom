@@ -59,7 +59,7 @@ const wifiNetworkIP = '172.20.10.8'; // Example IP address of the WiFi network
 // Middleware function to check the user's IP address against the WiFi network IP
 const restrictToWiFiNetwork = (req, res, next) => {
     const forwardedFor = req.headers['x-forwarded-for'];
-  const userIP = forwardedFor ? forwardedFor.split(',')[0] : req.connection.remoteAddress;
+  const userIP = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
   
     console.log('The user IP', userIP)
 
