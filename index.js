@@ -48,23 +48,23 @@ app.use(express.static('public'))
 
 dbConnection()
 
-app.use(requestIp.mw()) // Get client IP address
+// app.use(requestIp.mw()) // Get client IP address
 // Define the whitelisted WiFi network IP address
 // const wifiNetworkIP = '192.168.11.21'; // Example IP address of the WiFi network
 const wifiNetworkIP = '172.20.10.8'; // Example IP address of the WiFi network
 
 // Middleware function to check the user's IP address against the WiFi network IP
 const restrictToWiFiNetwork = (req, res, next) => {
-    const userIP = req.clientIp
-    console.log(userIP)
+    const userIP = req.ip
+    console.log('The user IP', userIP)
 
     if (userIP === wifiNetworkIP || userIP === `::ffff:${wifiNetworkIP}`) {
         // User's IP address matches the WiFi network IP
-        // next();
-        res.status(403).json({
-            success: true,
-            message: 'Access granted.'
-        });
+        next();
+        // res.status(403).json({
+        //     success: true,
+        //     message: 'Access granted.'
+        // });
     } else {
         // User's IP address does not match the WiFi network IP
         res.status(403).json({
