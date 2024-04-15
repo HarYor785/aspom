@@ -32,7 +32,7 @@ export const submitReport = async (req, res) => {
             })
         }
 
-        if(hour < 18){
+        if(currentDate.getHours() < 18){
             return res.status(403).json({
                 success: false,
                 message: "Reports can't be submitted before 6 PM"

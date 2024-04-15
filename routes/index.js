@@ -13,6 +13,7 @@ import resignRoute from './resignRoute.js'
 import payrollRoute from './payrollRoute.js'
 import appraisalRoute from './appraisalRoute.js'
 import holidayRoute from './holidayRoute.js'
+import locationRoute from './locationRoute.js'
 
 
 const router = express.Router()
@@ -35,6 +36,9 @@ router.use(`${route}/termination/`, termRoute)
 router.use(`${route}/resignation/`, resignRoute)
 router.use(`${route}/payroll/`, payrollRoute)
 router.use(`${route}/holiday/`, holidayRoute)
+
+// ADMIN
+router.use(`${route}/location/`, locationRoute)
 
 
 
