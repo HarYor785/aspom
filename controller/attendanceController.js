@@ -154,12 +154,12 @@ export const clockOut = async (req, res) => {
             })
         }
 
-        if(clockOutTime.getHours() < 18){
-            return res.status(403).json({
-                success: false,
-                message: 'You can only clock out after 6PM!'
-            })
-        }
+        // if(clockOutTime.getHours() < 18){
+        //     return res.status(403).json({
+        //         success: false,
+        //         message: 'You can only clock out after 6PM!'
+        //     })
+        // }
 
         // Check if the user has already clocked out for the day
         const existingAttendance = await Attendance.findOne({
