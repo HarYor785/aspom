@@ -14,6 +14,20 @@ import { tasks_v1 } from "googleapis";
 |TODO LIST
 \* ********************** */ 
 
+// Function to get the start of the day for a given date
+const startOfDayFunc = (date) => {
+    const start = new Date(date);
+    start.setHours(0, 0, 0, 0); // Set hours, minutes, seconds, and milliseconds to 0
+    return start;
+};
+
+// Function to get the end of the day for a given date
+const endOfDayFunc = (date) => {
+    const end = new Date(date);
+    end.setHours(23, 59, 59, 999); // Set hours, minutes, seconds, and milliseconds to end of the day
+    return end;
+};
+
 
 // CREATE TASK
 export const createTask = async (req, res, io) => {
@@ -410,6 +424,11 @@ export const getUserTaskStatistics = async (req, res) => {
     try {
         const {userId} = req.body.user;
         const {month} = req.params
+        const today = new Date();
+        const dayOfWeek = today.getDay(); // 0 for Sunday, 6 for Saturday
+        const startOfDay = new Date(today.setHours(0, 0, 0, 0)); // Normalize to start of day
+        const endOfDay = new Date(today.setHours(23, 59, 59, 999)); 
+
         const user = await AuthUser.findById(userId)
 
         if(!user){
@@ -419,49 +438,66 @@ export const getUserTaskStatistics = async (req, res) => {
             })
         }
 
-        const users = await AuthUser.find({}, '_id firstName lastName staffId department role');
+        const users = await AuthUser.find();
 
-    const userStatisticsArray = await Promise.all(users.map(async (user) => {
-    const tasks = await Tasks.find({ user: user._id }).sort({ createdAt: -1 });
+        const userStatisticsArray = await Promise.all(users.map(async (user) => {
+            const tasks = await Tasks.findOne({ 'user': user._id });
+        
+            if (tasks && tasks.todolist) {
+                const currentDayOfMonth = moment().date();
+                const startOfMonth = moment(month, 'MM').startOf('month'); // Use the month from req.body
+                const endOfMonth = moment(month, 'MM').endOf('month'); // Use the month from req.body
+        
+                let totalDaysTasksSubmitted = 0;
+                let totalMissed = 0;
+                let totalHolidays = 0;
+                let totalWorkingDays = 0;
+        
+                const holidays = await Holiday.find();
 
-    const currentDayOfMonth = moment().date();
-    const startOfMonth = moment(month, 'MM').startOf('month'); // Use the month from req.body
-    const endOfMonth = moment(month, 'MM').endOf('month'); // Use the month from req.body
-
-    let totalDaysTasksSubmitted = 0;
-    let totalMissed = 0;
-
-    for (let day = startOfMonth.clone(); day <= endOfMonth; day.add(1, 'day')) {
-        const isWeekend = day.day() === 0 || day.day() === 6; // Sunday is 0, Saturday is 6
-        const taskDay = moment(day);
-        const taskExists = tasks.some(task => moment(task.createdAt).isSame(taskDay, 'day'));
-
-        if (!isWeekend && !taskExists) {
-            totalMissed++;
-        }
-
-        if (taskExists) {
-            totalDaysTasksSubmitted++;
-        }
-
-        if (day.date() === currentDayOfMonth) {
-            break; // Stop loop when reaching the current day
-        }
-    }
-
-    return {
-        user: {
-            _id: user._id,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            staffId: user.staffId,
-            department: user.department,
-            role: user.role
-        },
-        totalDaysTasksSubmitted,
-        totalMissed
-    };
-}));
+                for (let day = startOfMonth.clone(); day <= endOfMonth; day.add(1, 'day')) {
+                    const isWeekend = day.day() === 0 || day.day() === 6; // Sunday is 0, Saturday is 6
+                    const taskDay = moment(day);
+                    const taskExists = tasks.todolist.some(task => moment(task.date).isSame(taskDay, 'day'));
+                    const isHoliday = holidays.some(holiday => moment(holiday.date).isSame(taskDay, 'day'));
+        
+                    if (!isWeekend && !isHoliday) {
+                        totalWorkingDays++;
+                    }
+        
+                    if (!isWeekend && !isHoliday && !taskExists) {
+                        totalMissed++;
+                    }
+        
+                    if (taskExists) {
+                        totalDaysTasksSubmitted++;
+                    }
+        
+                    if (isHoliday) {
+                        totalHolidays++;
+                    }
+        
+                    if (day.date() === currentDayOfMonth) {
+                        break; // Stop loop when reaching the current day
+                    }
+                }
+        
+                return {
+                    user: {
+                        _id: user._id,
+                        firstName: user.firstName,
+                        lastName: user.lastName,
+                        staffId: user.staffId,
+                        department: user.department,
+                        role: user.role
+                    },
+                    totalDaysTasksSubmitted,
+                    totalMissed,
+                    totalHolidays,
+                    totalWorkingDays
+                };
+            }
+        }));
 
 
         // const today = moment();
@@ -519,19 +555,6 @@ export const getUserTaskStatistics = async (req, res) => {
 |END OF TODO LIST CONTROLLER
 \* ********************** */ 
 
-// Function to get the start of the day for a given date
-const startOfDayFunc = (date) => {
-    const start = new Date(date);
-    start.setHours(0, 0, 0, 0); // Set hours, minutes, seconds, and milliseconds to 0
-    return start;
-};
-
-// Function to get the end of the day for a given date
-const endOfDayFunc = (date) => {
-    const end = new Date(date);
-    end.setHours(23, 59, 59, 999); // Set hours, minutes, seconds, and milliseconds to end of the day
-    return end;
-};
 
 // TASKS STATISTICS FUNCTION
 export const updateTasksStatistics = async () => {

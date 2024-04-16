@@ -19,7 +19,7 @@ const leaveBalanceSchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
-})
+},{timestamps: true})
 
 
 const LeaveBalance = mongoose.model('LeaveBalance', leaveBalanceSchema)

@@ -9,7 +9,7 @@ const holidaySchema = new mongoose.Schema({
         type: Date,
         required: true
     }
-});
+},{timestamps: true});
 
 const Holiday = mongoose.model('Holiday', holidaySchema);
 

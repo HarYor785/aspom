@@ -14,7 +14,7 @@ export const submitReport = async (req, res) => {
     try {
         const {userId} = req.body.user
         const { title, description, date } = req.body;
-        const currentDate = new Date();
+        let currentDate = new Date();
         const year = currentDate.getFullYear();
         const month = currentDate.getMonth() + 1;
         const hour = currentDate.getHours()

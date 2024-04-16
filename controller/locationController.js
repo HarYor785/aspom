@@ -8,10 +8,12 @@ export const addLocation = async (req, res) =>{
         const { name, 
             latitude, 
             longitude, 
+            address,
             city, 
             state, 
             postalCode, 
             country } = req.body;
+            console.log(req.body)
 
         const user = await AuthUser.findById(userId)
 
@@ -26,6 +28,7 @@ export const addLocation = async (req, res) =>{
             name, 
             latitude, 
             longitude,
+            street: address,
             city,
             state,
             postalCode,

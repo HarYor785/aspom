@@ -23,13 +23,13 @@ const taskSchema = new mongoose.Schema({
         ref: 'AuthUser'
     },
     month: {
-        type: String,
-        default: getCurrentMonthAndYear().month,
+        type: Number,
+        default: () => new Date().getMonth + 1,
         required: true
     },
     year: {
-        type: String,
-        default: getCurrentMonthAndYear().year,
+        type: Number,
+        default: () => new Date().getFullYear(),
         required: true
     },
     todolist: [

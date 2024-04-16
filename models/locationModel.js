@@ -13,6 +13,9 @@ const locationSchema = new mongoose.Schema({
         type: Number,
         required: true
     },
+    street: {
+        type: String,
+    },
     city: {
         type: String,
     },
@@ -30,7 +33,7 @@ const locationSchema = new mongoose.Schema({
         enum: ['Open', 'Closed',],
         default: 'Open'
     }
-});
+},{timestamps: true});
 
 const Location = mongoose.model('Location', locationSchema);
 
