@@ -344,6 +344,118 @@ export const updateProfile = async (req, res) => {
     }
 }
 
+export const addAdmin = async (req, res) =>{
+    try{
+        const {userId} = req.body.user
+
+        const auth = await AuthUser.findById(userId)
+
+        if(!auth || auth.role !== 'Administrator'){
+            return res.status(403).json({
+                successs: false,
+                message: 'Authorization failed!'
+            })
+        }
+        
+        const {
+            firstName,
+            lastName,
+            staffId,
+            email,
+            department,
+            role,
+            password
+        } = req.body
+        
+        if(!firstName || !lastName || !staffId || !department || !role || !email || !password){
+            return res.status(400).json({
+                success: false,
+                message: "Please fill out all fields"
+            })
+        }
+        
+        if (!email.endsWith('@aspomtravels.com')) {
+            return res.status(403).json({
+                success:false,  
+                message:"Email must be from @aspomtravels.com domain" 
+            });
+        }
+
+        const ifExistsMail = await AuthUser.findOne({email: email})
+        const ifExistsStaffId = await AuthUser.findOne({staffId: staffId})
+
+        if(ifExistsMail) {
+            return res.status(403).json({
+                success:false,  
+                message:"Email address already exists!" 
+            });
+        }
+
+        if(ifExistsStaffId) {
+            return res.status(403).json({
+                success:false,  
+                message:"Staff ID already exists!" 
+            });
+        }
+
+        const hash = await hashPassword(password)
+
+        const user = new AuthUser({
+            firstName,
+            lastName,
+            department,
+            role,
+            email,
+            staffId,
+            password : hash,
+            verified: true
+        })
+        
+        await user.save()
+
+        res.status(200).json({
+            success: true,
+            message: 'New Administrator added successfully!'
+        })
+
+    }catch(error){
+        console.log(error)
+        res.status(500).json({
+            success: false,
+            message: 'Internal Server Error!'
+        })
+    }
+}
+
+export const getAdmins = async (req, res) => {
+    try{
+        const {userId} = req.body.user
+
+        const auth = await AuthUser.findById(userId)
+
+        if(!auth || auth.role !== 'Administrator'){
+            return res.status(403).json({
+                successs: false,
+                message: 'Authorization failed!'
+            })
+        }
+
+        const admins = await AuthUser.find({role: 'Administrator'})
+
+        res.status(200).json({
+            success: true,
+            message: 'Administrator fetched successfully!',
+            data: admins
+        })
+    }catch(error){
+        console.log(error)
+        return res.status(500).json({
+            success: false,
+            message: 'Server error'
+        })
+    }
+}
+
 export const getAcounts = async (req, res) => {
     try {
         const {userId} = req.body.user
@@ -368,7 +480,7 @@ export const getAcounts = async (req, res) => {
         console.log(error)
         return res.status(500).json({
             success: false,
-            msg: 'Server error'
+            message: 'Internal Server error'
         })
     }
 }

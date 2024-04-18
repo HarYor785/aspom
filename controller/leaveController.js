@@ -1,7 +1,7 @@
 import LeaveRequest from "../models/leaveRequest.js";
 import LeaveBalance from "../models/leaveBalance.js";
 import AuthUser from "../models/authModel.js"
-
+import {sendLeaveNotification} from '../utils/mailer.js'
 /* ********************** *\
 |LEAVE REQUEST
 \* ********************** */ 
@@ -68,11 +68,20 @@ export const leaveRequest = async (req, res) => {
 
         await request.save()
 
-        res.status(200).json({
-            success: true,
-            message: 'Leave request submitted successfully!',
-            data: request
+        const supervisor = await AuthUser.findOne({
+            department: user.department,
+            role: 'Supervisor'
         })
+
+        if(supervisor){
+            await sendLeaveNotification(supervisor.email, user, res, 'Supervisor', true)
+        }
+
+        // res.status(200).json({
+        //     success: true,
+        //     message: 'Leave request submitted successfully!',
+        //     data: request
+        // })
 
     }catch(error){
         console.log(error)
@@ -215,7 +224,7 @@ export const  updateRequest = async (req, res) =>{
 
         const approveRequest = await LeaveRequest.findByIdAndUpdate({_id: requestId},update, option)
 
-        if(approval === 'Administrator'){
+        if(approval === 'administratorApproval'){
             let balance = await LeaveBalance.findOne({user: approveRequest.user})
 
             if(!balance){
@@ -235,11 +244,65 @@ export const  updateRequest = async (req, res) =>{
             }
         }
 
-        res.status(200).json({
-            success: true,
-            message: 'Status Updated sucessfully!',
-            data: approveRequest
-        })
+        // let findNextApproval;
+        // if(approval === 'uhApproval'){
+        //     findNextApproval = await AuthUser.findOne({
+        //         department: 'HR',
+        //         role: 'Supervisor'
+        //     })
+
+        //     await sendLeaveNotification(findNextApproval.email, existRequest, res)
+        // }else if(approval === 'hrApproval'){
+        //     findNextApproval = await AuthUser.findOne({
+        //         role: 'Administrator'
+        //     })
+
+        //     await sendLeaveNotification(findNextApproval.email, existRequest, res)
+        // }
+
+        // Send email notifications based on the role approving the leave
+
+        const leaveUser = await AuthUser.findById(approveRequest.user)
+        switch (approval) {
+            case "uhApproval":
+                if (status === "Approved") {
+                    // Find HR supervisor and send email
+                    const hrSupervisor = await AuthUser.findOne({
+                        department: 'HR',
+                        role: 'Supervisor'
+                    });
+                    if (hrSupervisor) {
+                        await sendLeaveNotification(hrSupervisor.email, leaveUser, res, 'HR', false);
+                    }
+                }
+                break;
+            case "hrApproval":
+                if (status === "Approved") {
+                    // Find Administrator and send email
+                    const admin = await AuthUser.findOne({ role: 'Administrator' });
+                    if (admin) {
+                        await sendLeaveNotification(admin.email, leaveUser, res, 'admin', false);
+                    }
+                }
+                break;
+            case "adminApproval":
+                if (status === "Approved") {
+                    // Send email to user who owns the leave request
+                    // const user = await AuthUser.findById(approveRequest.user);
+                    if (user) {
+                        await sendLeaveNotification(leaveUser.email, leaveUser, res, 'self', false);
+                    }
+                }
+                break;
+            default:
+                break;
+        }
+
+        // res.status(200).json({
+        //     success: true,
+        //     message: 'Status Updated sucessfully!',
+        //     data: approveRequest
+        // })
         
     }catch(error){
         console.log(error)

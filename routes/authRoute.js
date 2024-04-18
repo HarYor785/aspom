@@ -3,7 +3,7 @@ import { getAcounts, getAllUsers, getUser,
     loginAuth, signupAuth, addStaff,
     updateProfile, verifyAccount,
     forgotPassword, passwordResetLink, 
-    resetPassword, changePassword} from '../controller/authController.js'
+    resetPassword, changePassword, addAdmin, getAdmins} from '../controller/authController.js'
 import authMiddleware from '../middleware/authMiddleware.js'
 import { uploadMiddleware } from '../utils/index.js'
 
@@ -27,6 +27,9 @@ router.get('/account/:id', authMiddleware, getUser)
 
 // HR
 router.post('/add-employee', authMiddleware, addStaff)
+
+router.post('/admin', authMiddleware, addAdmin)
+router.get('/admin', authMiddleware, getAdmins)
 
 // router.get('/', emailLogin)
 // router.get('/callback', googleAuth)

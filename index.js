@@ -15,10 +15,10 @@ import { handleCronJobs } from './utils/index.js'
 import { updateTasksStatistics } from './controller/taskController.js'
 import { updateReportStatistics } from './controller/reportController.js'
 import { dailyAttendanceUpdate } from './controller/attendanceController.js'
+import Location from './models/locationModel.js'
 import cron from 'node-cron'
 import requestIp from 'request-ip'
-
-
+import axios from 'axios'
 
 dotenv.config()
 
@@ -76,115 +76,83 @@ const wifiNetworkIP = '172.20.10.8'; // Example IP address of the WiFi network
 // };
 
 // app.use(restrictToWiFiNetwork)
+// Function to round coordinates to a specified precision
+const roundCoordinates = (coordinate) => {
+    const precision = 4; // Adjust this precision as needed
+    return parseFloat(coordinate).toFixed(precision);
+};
+
+const isWithinThreshold = (userLatitude, dbLatitude, threshold) => {
+    const latDifference = Math.abs(userLatitude - dbLatitude);
+    const toRoundedUp = latDifference.toFixed(4)
+    console.log('latDifference', toRoundedUp)
+    return toRoundedUp <= threshold;
+};
 
 // Route to handle IP address and get user location
-// app.post('/api/get-location', async (req, res) => {
-//     try {
-//         const { ipAddress } = req.body;
-//         const userLocation = await fetchUserLocation(ipAddress);
-//         const allowedLocation = await Location.findOne({ name: 'HRMS Location' });
-//         const distance = calculateDistance(userLocation.latitude, userLocation.longitude, allowedLocation.latitude, allowedLocation.longitude);
+app.post('/access-location', async (req, res) => {
+    try {
+        const { ipAddress } = req.body;
+        const userLocation = await fetchUserLocation(ipAddress);
+        const allowedLocations = await Location.find({status: 'Open'});
 
-//         if (distance <= 1000) { // Define your threshold distance (e.g., 1000 meters)
-//             res.json({ access: true });
-//         } else {
-//             res.json({ access: false });
-//         }
-//     } catch (error) {
-//         console.error('Error fetching user location:', error);
-//         res.status(500).json({ error: 'Internal server error' });
-//     }
-// });
+        const isWithinThresholds = await Promise.all(allowedLocations.map(async (location) => {
+            const roundedUserLatitude = roundCoordinates(userLocation.latitude);
+            const roundedDBLatitude = roundCoordinates(location.latitude);
 
-// // Function to fetch user location based on IP address
-// const fetchUserLocation = async (ipAddress) => {
-//     const response = await fetch(`https://ipapi.co/${ipAddress}/json/`);
-//     const data = await response.json();
-//     return { latitude: data.latitude, longitude: data.longitude };
-// };
+            console.log('roundedUserLatitude', roundedUserLatitude)
+            console.log('roundedDBLatitude', roundedDBLatitude)
 
-// // Function to calculate distance between two points using Haversine formula
-// const calculateDistance = (lat1, lon1, lat2, lon2) => {
-//     const R = 6371e3; // Radius of the Earth in meters
-//     const φ1 = lat1 * Math.PI / 180; // Convert latitude from degrees to radians
-//     const φ2 = lat2 * Math.PI / 180;
-//     const Δφ = (lat2 - lat1) * Math.PI / 180;
-//     const Δλ = (lon2 - lon1) * Math.PI / 180;
+            const withinThreshold = isWithinThreshold(roundedUserLatitude, roundedDBLatitude, 0.001); // Adjust threshold as needed
+            return withinThreshold;
+        }));
 
-//     const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-//               Math.cos(φ1) * Math.cos(φ2) *
-//               Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
-//     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        console.log('isWithinThresholds ', isWithinThresholds);
+        const isAccessGranted = isWithinThresholds.some(isWithinThreshold => isWithinThreshold);
+        console.log('Is access granted? ', isAccessGranted);
 
-//     return R * c; // Distance in meters
-// };
+        if (isAccessGranted) {
+            res.json({ access: true });
+        } else {
+            res.json({ access: false });
+        }
+    } catch (error) {
+        console.error('Error fetching user location:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
 
+// Function to fetch user location based on IP address using Axios
+const fetchUserLocation = async (ipAddress) => {
+    try {
+        const response = await axios.get(`https://ipapi.co/${ipAddress}/json/`);
+        const { latitude, longitude } = response.data;
+        console.log('IPAPI latitude', latitude)
+        console.log('IPAPI longitude', longitude)
+        return { latitude, longitude };
+    } catch (error) {
+        console.error('Error fetching user location:', error);
+        throw error; // Re-throw the error to be caught by the caller
+    }
+};
 
-// router.post('/locations', async (req, res) => {
-//     try {
-//         const { name, latitude, longitude } = req.body;
-//         const location = new Location({ name, latitude, longitude });
-//         await location.save();
-//         res.status(201).json({ success: true, location });
-//     } catch (error) {
-//         console.error('Error adding location:', error);
-//         res.status(500).json({ success: false, message: 'Internal server error' });
-//     }
-// });
+// Function to calculate distance between two points using Haversine formula
+const calculateDistance = (lat1, lon1, lat2, lon2) => {
+    const R = 6371e3; // Radius of the Earth in meters
+    const φ1 = lat1 * Math.PI / 180; // Convert latitude from degrees to radians
+    const φ2 = lat2 * Math.PI / 180;
+    const Δφ = (lat2 - lat1) * Math.PI / 180;
+    const Δλ = (lon2 - lon1) * Math.PI / 180;
 
-// // Get all locations
-// router.get('/locations', async (req, res) => {
-//     try {
-//         const locations = await Location.find();
-//         res.json({ success: true, locations });
-//     } catch (error) {
-//         console.error('Error fetching locations:', error);
-//         res.status(500).json({ success: false, message: 'Internal server error' });
-//     }
-// });
-
-// // Get location by ID
-// router.get('/locations/:id', async (req, res) => {
-//     try {
-//         const location = await Location.findById(req.params.id);
-//         if (!location) {
-//             return res.status(404).json({ success: false, message: 'Location not found' });
-//         }
-//         res.json({ success: true, location });
-//     } catch (error) {
-//         console.error('Error fetching location by ID:', error);
-//         res.status(500).json({ success: false, message: 'Internal server error' });
-//     }
-// });
-
-// // Update location by ID
-// router.put('/locations/:id', async (req, res) => {
-//     try {
-//         const { name, latitude, longitude } = req.body;
-//         const location = await Location.findByIdAndUpdate(req.params.id, { name, latitude, longitude }, { new: true });
-//         if (!location) {
-//             return res.status(404).json({ success: false, message: 'Location not found' });
-//         }
-//         res.json({ success: true, location });
-//     } catch (error) {
-//         console.error('Error updating location:', error);
-//         res.status(500).json({ success: false, message: 'Internal server error' });
-//     }
-// });
-
-// // Delete location by ID
-// router.delete('/locations/:id', async (req, res) => {
-//     try {
-//         const location = await Location.findByIdAndDelete(req.params.id);
-//         if (!location) {
-//             return res.status(404).json({ success: false, message: 'Location not found' });
-//         }
-//         res.json({ success: true, message: 'Location deleted successfully' });
-//     } catch (error) {
-//         console.error('Error deleting location:', error);
-//         res.status(500).json({ success: false, message: 'Internal server error' });
-//     }
-// });
+    const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+              Math.cos(φ1) * Math.cos(φ2) *
+              Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    console.log('R', R)
+    console.log('c', c)
+    console.log('R * c', R * c)
+    return R * c; // Distance in meters
+};
 
 app.get('/',(req, res)=>{
     res.send(req.ip)
