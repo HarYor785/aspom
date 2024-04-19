@@ -14,10 +14,9 @@ export const submitReport = async (req, res) => {
     try {
         const {userId} = req.body.user
         const { title, description, date } = req.body;
-        let currentDate = new Date();
+        const currentDate = new Date();
         const year = currentDate.getFullYear();
         const month = currentDate.getMonth() + 1;
-        const hour = currentDate.getHours()
         const dayStart = new Date(currentDate.setHours(0, 0, 0, 0)); // Start of the current day
         const dayEnd = new Date(currentDate.setHours(23, 59, 59, 999)); // Normalize to end of day
         const file = req.file
@@ -31,13 +30,15 @@ export const submitReport = async (req, res) => {
                 message: 'Authorization failed'
             })
         }
+        
+        // console.log(currentDate.getHours())
 
-        if(currentDate.getHours() < 18){
-            return res.status(403).json({
-                success: false,
-                message: "Reports can't be submitted before 6 PM"
-            })
-        }
+        // if(currentDate.getHours() < 18){
+        //     return res.status(403).json({
+        //         success: false,
+        //         message: "Reports can't be submitted before 6 PM"
+        //     })
+        // }
 
         const submittedToday = await Reports.findOne({
             user: user._id,
@@ -51,15 +52,15 @@ export const submitReport = async (req, res) => {
             })
         }
 
-        if (date) {
-            currentDate = new Date(date);
-            if (isNaN(currentDate.getTime())) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Invalid date format'
-                });
-            }
-        }
+        // if (!date) {
+        //     // currentDate = new Date(date);
+        //     // if (isNaN(currentDate.getTime())) {
+        //         return res.status(400).json({
+        //             success: false,
+        //             message: 'Invalid date format'
+        //         });
+        //     // }
+        // }
 
         if(file){
             filename = file.filename
@@ -76,7 +77,7 @@ export const submitReport = async (req, res) => {
                 user: userId,
                 year,
                 month,
-                reports: [{ title, description, attachment: filename }],
+                reports: [{ title, description, attachment: filename, date: date ? date : currentDate }],
             });
 
             const report = await monthlyReport.save()
@@ -86,7 +87,7 @@ export const submitReport = async (req, res) => {
 
         } else {
             // Update existing monthly report if it exists
-            monthlyReport.reports.push({ title, description, attachment: filename });
+            monthlyReport.reports.push({ title, description, attachment: filename, date: date ? date : currentDate });
         }
 
         monthlyReport.totalSubmitted++
@@ -287,9 +288,9 @@ export const updateReportStatistics = async ()=>{
                 }
 
                 // Update totalMissed for the user if task not found for today
-                if (!report.reports || !report.reports.some(item => item.date.toDateString() === today.toDateString())) {
+                if (!report.reports || !report.reports.some(item => moment(item.date).format("DD MMMM YYYY") === moment(today).format("DD MMMM YYYY"))) {
                     report.totalMissed++;
-                    console.log('Incrementing...');
+                    console.log('Incrementing report...');
                     await report.save();
                 }
             }))

@@ -512,7 +512,7 @@ export const getAllUsers = async (req, res) => {
         console.log(error)
         return res.status(500).json({
             success: false,
-            msg: 'Server error'
+            message: 'Server error'
         })
     }
 }
@@ -562,7 +562,7 @@ export const addStaff = async (req, res) => {
 
         const user = await AuthUser.findById(userId)
 
-        if(!user){
+        if(!user || user.role !== 'HR'){
             return res.status(403).json({
                 successs: false,
                 message: 'Authorization failed!'
@@ -579,11 +579,19 @@ export const addStaff = async (req, res) => {
         }
 
         const existId = await AuthUser.findOne({staffId: staffId})
+        const existMail = await AuthUser.findOne({email: email})
 
         if(existId){
             return res.status(403).json({
                 success: false,
                 message: 'Employee ID already exist!'
+            })
+        }
+
+        if(existMail){
+            return res.status(403).json({
+                success: false,
+                message: 'Employee email already exist!'
             })
         }
 
@@ -618,7 +626,7 @@ export const addStaff = async (req, res) => {
         console.log(error)
         return res.status(500).json({
             success: false,
-            msg: 'Server error'
+            message: 'Server error'
         })
     }
 }
