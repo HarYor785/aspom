@@ -131,49 +131,65 @@ export const getDepts = async ( req, res, next ) => {
         // const departments = await Department.find().populate({
         //     path: 'head',
         //     select: 'firstName lastName'
-        // }).sort({createdAt: -1})
+        // })
 
-        const departments = await Department.aggregate([
-            {
-                $lookup: {
-                    from: 'authusers',
-                    localField: 'head',
-                    foreignField: '_id',
-                    as: 'head'
-                }
-            },
-            {
-                $addFields: {
-                    total: { $size: '$head' } // Calculate the total number of users in the department
-                }
-            },
-            {
-                $project: {
-                    name: 1,
-                    head: {
-                        $arrayElemAt: [
-                            {
-                                $map: {
-                                    input: '$head',
-                                    as: 'user',
-                                    in: {
-                                        firstName: '$$user.firstName',
-                                        lastName: '$$user.lastName'
-                                    }
-                                }
-                            },
-                            0
-                        ]
-                    },
-                    total: 1
-                }
-            }
-        ]);
+        // Fetch all departments with their associated head users
+        const departments = await Department.find().populate('head').exec();
+
+        // Iterate through each department
+        const departmentsWithUserCounts = await Promise.all(departments.map(async (department) => {
+            // Count the number of users in the current department
+            const userCount = await AuthUser.countDocuments({ department: department.name });
+            return {
+                name: department.name,
+                head: department.head ? `${department.head.firstName} ${department.head.lastName}` : 'N/A',
+                profile: department.head.profilePic,
+                totalUsers: userCount
+            };
+        }));
+        // .sort({createdAt: -1})
+
+        // const departments = await Department.aggregate([
+        //     {
+        //         $lookup: {
+        //             from: 'authusers',
+        //             localField: 'head',
+        //             foreignField: '_id',
+        //             as: 'head'
+        //         }
+        //     },
+        //     {
+        //         $addFields: {
+        //             total: { $size: '$head' } // Calculate the total number of users in the department
+        //         }
+        //     },
+        //     {
+        //         $project: {
+        //             name: 1,
+        //             head: {
+        //                 $arrayElemAt: [
+        //                     {
+        //                         $map: {
+        //                             input: '$head',
+        //                             as: 'user',
+        //                             in: {
+        //                                 firstName: '$$user.firstName',
+        //                                 lastName: '$$user.lastName'
+        //                             }
+        //                         }
+        //                     },
+        //                     0
+        //                 ]
+        //             },
+        //             total: 1
+        //         }
+        //     }
+        // ]);
 
         res.status(200).json({
             success: true,
             message: 'Department list retrieved successfully!',
-            data: departments
+            data: departmentsWithUserCounts
         })
     } catch (error) {
         res.status(500).json({

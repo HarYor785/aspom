@@ -64,7 +64,7 @@ export const createTask = async (req, res, io) => {
         }
 
         // Check if the current hour is 12 PM or later
-        if (taskHour >= 12) {
+        if (today.getHours() >= 12) {
             return res.status(403).json({
                 success: false,
                 message: "Tasks can't be submitted after 12 PM"
@@ -110,7 +110,7 @@ export const createTask = async (req, res, io) => {
                         assign: user._id,
                         team: teamArray ? teamArray : [],
                         attachment: file ? file.filename : '',
-                        date: today
+                        // date: today
                     })
 
                     todoLists.totalMarkedDays++;
@@ -151,7 +151,7 @@ export const createTask = async (req, res, io) => {
                     status: status ? status : 'InProgress', 
                     progress: progress ? progress : 0,
                     attachment: file ? file.filename : '',
-                    date: today
+                    // date: today
                 })
     
                 todoLists.totalMarkedDays++;
@@ -162,7 +162,7 @@ export const createTask = async (req, res, io) => {
                     status: status ? status : 'InProgress', 
                     progress: progress ? progress : 0,
                     attachment: file ? file.filename : '',
-                    date: today
+                    // date: today
                 })
             }
             
