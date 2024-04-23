@@ -176,19 +176,22 @@ export const  updateRequest = async (req, res) =>{
         }
 
         const existRequest = await LeaveRequest.findById(requestId)
-
+        
         if (!existRequest) {
             return res.status(401).json({ 
                 success: false, 
                 message: 'Leave request not found' 
             });
         }
+        
+        const requestOwner = await AuthUser.findById(existRequest.user)
 
         let approval;
         switch(user.role){
             case "Supervisor":
-                approval = "uhApproval";
-                break;
+                if (user.role === 'Supervisor' && user.department === requestOwner.department) {
+                    approval = "uhApproval";
+                }
             case "HR":
                 approval = "hrApproval";
                 break;
