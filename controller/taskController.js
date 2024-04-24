@@ -101,18 +101,17 @@ export const createTask = async (req, res, io) => {
                 // Check if the user has already submitted a task for today
                 const submittedToday = todoLists.todolist.some(task => task.date.toDateString() === today.toDateString());
 
+                todoLists.todolist.push({
+                    title,  
+                    description,  
+                    status: status ? status : 'InProgress', 
+                    progress: progress ? progress : 0,
+                    assign: user._id,
+                    team: teamArray ? teamArray : [],
+                    attachment: file ? file.filename : '',
+                    date: today
+                })
                 if(!submittedToday){
-                    todoLists.todolist.push({
-                        title,  
-                        description,  
-                        status: status ? status : 'InProgress', 
-                        progress: progress ? progress : 0,
-                        assign: user._id,
-                        team: teamArray ? teamArray : [],
-                        attachment: file ? file.filename : '',
-                        // date: today
-                    })
-
                     todoLists.totalMarkedDays++;
                 }
 
@@ -144,27 +143,28 @@ export const createTask = async (req, res, io) => {
             // Check if the user has already submitted a task for today
             const submittedToday = todoLists.todolist.some(task => task.date.toDateString() === today.toDateString());
 
+            todoLists.todolist.push({
+                title,  
+                description,  
+                status: status ? status : 'InProgress', 
+                progress: progress ? progress : 0,
+                attachment: file ? file.filename : '',
+                date: today
+            })
             if(!submittedToday){
-                todoLists.todolist.push({
-                    title,  
-                    description,  
-                    status: status ? status : 'InProgress', 
-                    progress: progress ? progress : 0,
-                    attachment: file ? file.filename : '',
-                    // date: today
-                })
-    
                 todoLists.totalMarkedDays++;
-            }else{
-                todoLists.todolist.push({
-                    title,  
-                    description,  
-                    status: status ? status : 'InProgress', 
-                    progress: progress ? progress : 0,
-                    attachment: file ? file.filename : '',
-                    // date: today
-                })
             }
+    
+            // }else{
+            //     todoLists.todolist.push({
+            //         title,  
+            //         description,  
+            //         status: status ? status : 'InProgress', 
+            //         progress: progress ? progress : 0,
+            //         attachment: file ? file.filename : '',
+            //         // date: today
+            //     })
+            // }
             
             await todoLists.save()
 

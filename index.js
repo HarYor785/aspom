@@ -100,16 +100,13 @@ app.post('/access-location', async (req, res) => {
             const roundedUserLatitude = roundCoordinates(userLocation.latitude);
             const roundedDBLatitude = roundCoordinates(location.latitude);
 
-            console.log('roundedUserLatitude', roundedUserLatitude)
-            console.log('roundedDBLatitude', roundedDBLatitude)
-
             const withinThreshold = isWithinThreshold(roundedUserLatitude, roundedDBLatitude, 0.001); // Adjust threshold as needed
             return withinThreshold;
         }));
 
-        console.log('isWithinThresholds ', isWithinThresholds);
+        // console.log('isWithinThresholds ', isWithinThresholds);
         const isAccessGranted = isWithinThresholds.some(isWithinThreshold => isWithinThreshold);
-        console.log('Is access granted? ', isAccessGranted);
+        // console.log('Is access granted? ', isAccessGranted);
 
         if (isAccessGranted) {
             res.json({ access: true });

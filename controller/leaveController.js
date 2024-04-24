@@ -49,12 +49,12 @@ export const leaveRequest = async (req, res) => {
             await balance.save()
         }
 
-        if(leaveType === 'Annual Leave' && balance.annualLeave < days 
-        || leaveType === 'Casual Leave' && balance.casualLeave < days ){
+        if ((leaveType === 'Annual Leave' && balance.annualLeave < days) ||
+            (leaveType === 'Casual Leave' && balance.casualLeave < days)) {
             return res.status(402).json({
                 success: false,
                 message: `You don't have enough ${leaveType} balance.`
-            })
+            });
         }
 
         const request = new LeaveRequest({

@@ -12,7 +12,7 @@ router.post('/', uploadMiddleware, authMiddleware, (req, res)=>{
 router.get('/user', authMiddleware, getUserTasks)
 // router.get('/', authMiddleware, getAllTasks)
 router.get('/:month', authMiddleware, getUserTaskStatistics)
-router.put('/:id', authMiddleware, updateTasks)
+// router.put('/:id', authMiddleware, updateTasks)
 router.put('/progress/:id', authMiddleware, updateTaskProgress)
 
 
