@@ -1,7 +1,7 @@
 import LeaveRequest from "../models/leaveRequest.js";
 import LeaveBalance from "../models/leaveBalance.js";
 import AuthUser from "../models/authModel.js"
-import {sendLeaveNotification} from '../utils/mailer.js'
+import {sendLeaveNotification, rejectLeaveNotification} from '../utils/mailer.js'
 /* ********************** *\
 |LEAVE REQUEST
 \* ********************** */ 
@@ -191,7 +191,10 @@ export const  updateRequest = async (req, res) =>{
             case "Supervisor":
                 if (user.role === 'Supervisor' && user.department === requestOwner.department) {
                     approval = "uhApproval";
+                }else{
+                    approval = "invalid"
                 }
+                break;
             case "HR":
                 approval = "hrApproval";
                 break;
@@ -215,6 +218,13 @@ export const  updateRequest = async (req, res) =>{
                 });
         }
 
+        if(approval === 'invalid'){
+            return res.status(403).json({
+                success: false,
+                message: `You don't have access!`
+            })
+        }
+
         if(!['Approved', 'Pending', 'Rejected'].includes(status)){
             return res.status(401).json({
                 success: false,
@@ -227,22 +237,25 @@ export const  updateRequest = async (req, res) =>{
 
         const approveRequest = await LeaveRequest.findByIdAndUpdate({_id: requestId},update, option)
 
-        if(approval === 'administratorApproval'){
+        if(approval === 'adminApproval' && status === 'Approved'){
             let balance = await LeaveBalance.findOne({user: approveRequest.user})
+
+                console.log('approved days', approveRequest.days)
+                console.log('days', days)
 
             if(!balance){
                 balance = new LeaveBalance({
                     user: approveRequest.user,
-                    annualLeave: approveRequest.leaveType === 'Annual Leave' ? parseInt(days) - 20 : 20 ,
-                    casualLeave: approveRequest.leaveType === 'Casual Leave' ? parseInt(days) - 5 : 5 ,
+                    annualLeave: approveRequest.leaveType === 'Annual Leave' ? 20 - parseInt(approveRequest.days) : 20 ,
+                    casualLeave: approveRequest.leaveType === 'Casual Leave' ? 5 - parseInt(approveRequest.days) : 5 ,
                 })
 
                 await balance.save()
             }else{
                 await LeaveBalance.findByIdAndUpdate({_id: balance._id},{
                     user: approveRequest.user,
-                    annualLeave: approveRequest.leaveType === 'Annual Leave' ? parseInt(days) - 20 : 20 ,
-                    casualLeave: approveRequest.leaveType === 'Casual Leave' ? parseInt(days) - 5 : 5 ,
+                    annualLeave: approveRequest.leaveType === 'Annual Leave' ? 20 - parseInt(approveRequest.days) : 20 ,
+                    casualLeave: approveRequest.leaveType === 'Casual Leave' ? 5 - parseInt(approveRequest.days) : 5 ,
                 })
             }
         }
@@ -277,6 +290,8 @@ export const  updateRequest = async (req, res) =>{
                     if (hrSupervisor) {
                         await sendLeaveNotification(hrSupervisor.email, leaveUser, res, 'HR', false);
                     }
+                }else if(status === 'Rejected'){
+                    await rejectLeaveNotification(leaveUser, res);
                 }
                 break;
             case "hrApproval":
@@ -286,26 +301,23 @@ export const  updateRequest = async (req, res) =>{
                     if (admin) {
                         await sendLeaveNotification(admin.email, leaveUser, res, 'admin', false);
                     }
+                }else if(status === 'Rejected'){
+                    await rejectLeaveNotification(leaveUser, res);
                 }
                 break;
             case "adminApproval":
                 if (status === "Approved") {
-                    // Send email to user who owns the leave request
-                    // const user = await AuthUser.findById(approveRequest.user);
                     if (user) {
                         await sendLeaveNotification(leaveUser.email, leaveUser, res, 'self', false);
                     }
+                }else if(status === 'Rejected'){
+                    await rejectLeaveNotification(leaveUser, res);
                 }
                 break;
             default:
                 break;
         }
 
-        // res.status(200).json({
-        //     success: true,
-        //     message: 'Status Updated sucessfully!',
-        //     data: approveRequest
-        // })
         
     }catch(error){
         console.log(error)

@@ -185,6 +185,60 @@ export const sendLeaveNotification = async (supervisorMail, user, res, roles, st
     }
 }
 
+export const rejectLeaveNotification = async (user, res)=>{
+    try {
+        const mailOption = {
+            from: 'Aspom Travels Agency',
+            to: user?.email,
+            subject: `Leave Request Notification - Your leave application was rejected`,
+            html:`<div style="display:flex;flex-direction: column;
+            gap: 0.2rem;align-items: start;background: #fff;padding: 0.5rem;">
+                    <h3 style="font-weight: bolder;">Dear ${user.firstName + ' ' + user?.lastName}</h3>
+                    <p>I regret to inform you that your leave request has been rejected</p>
+                    <br/><br/>
+                    <p>
+                        If you encounter any issues or have any questions, please don't hesitate
+                        to contact the IT Department for assistance at <strong>it@aspomtravels.com</strong>
+                    </p> 
+                    <div style="display: flex; flex-direction: column;padding-top: 1rem;">
+                        <p>Best regards,</p>
+                        <p>IT Team</p>
+                        <img src={${APP__URL}/assets/Aspom-Logo.png} alt="Logo" 
+                        style="width: 6rem; height: 6rem;"/>
+                        <h3>ASPOM TRAVEL AGENCY</h3>
+                        <p><strong>Head Office:</strong/> 69 Admiralty Way, Lekki Phase 1, Lagos Nigeria</p>
+                        <p><strong>Abuja Office:</strong> Aiivon Innovation Hub, 167 Adetokunbo Ademola Cresent Wuse, Abuja.</p>
+                        <p><strong>Ikeja Office:</strong> Pentagon Plaza, 23, Opebi Road, Ikeja, Lagos, Nigeria</p>
+                    </div>
+            </div>`
+        }
+
+        const message = 'Leave Updated successfully!'
+
+        transporter.sendMail(mailOption)
+        .then(()=>{
+            res.status(200).json({
+                success: true,
+                message: message,
+            })
+        })
+        .catch((error)=>{
+            console.log(error)
+            res.status(402).json({
+                success: false,
+                message: "There's an error, try again!"
+            })
+        })
+
+    } catch (error) {
+        console.log(error)
+        res.status(500).json({
+            success: false,
+            message: "There's an error sending verification code, try again!"
+        })
+    }
+}
+
 export const sendResetPassMail = async (user, res)=>{
     const {id, email} = user
     const token = id + uuidv4()
