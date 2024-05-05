@@ -420,6 +420,8 @@ export const getAllTasks = async (req, res) => {
     }
 };
 
+
+
 export const getUserTaskStatistics = async (req, res) => {
     try {
         const {userId} = req.body.user;
@@ -548,6 +550,35 @@ export const getUserTaskStatistics = async (req, res) => {
             success: false,
             message: "Internal server error" 
         });
+    }
+}
+
+export const getAdminTasks = async (req, res) => {
+    try{
+        const {userId} = req.body.user;
+
+        const user = await AuthUser.findById(userId)
+
+        if(!user){
+            return res.status(403).json({
+                success: false,
+                message: "Authorization failed!"
+            })
+        }
+
+        const tasks = await Tasks.find()
+
+        res.status(200).json({
+            success: true,
+            data: tasks
+        })
+
+    }catch(error){
+        console.log(error)
+        res.status(500).json({
+            success: false,
+            message: "Internal server error!"
+        })
     }
 }
 

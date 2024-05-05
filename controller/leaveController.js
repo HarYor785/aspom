@@ -364,6 +364,47 @@ export const userLeaveBalance = async (req, res) => {
     }
 }
 
+// Controller function to get staffs still on leave
+export const getStaffsOnLeave = async (req, res) => {
+    try {
+        const {userId} = req.body.user
+
+        const user = await AuthUser.findById(userId)
+
+        if(!user){
+            return res.status(403).json({
+                success: false,
+                message: 'Authorization failed!'
+            })
+        }
+
+        // Find leave requests where end date is greater than or equal to today's date
+        const staffsOnLeave = await LeaveRequest.find({ endDate: { $gte: new Date() } }).populate('user');
+    
+        // If there are no staffs on leave, return an empty array
+        if (!staffsOnLeave.length) {
+            return res.status(200).json({ 
+                success: false,
+                message: 'No staffs are currently on leave.'
+            });
+        }
+    
+        // If staffs on leave are found, return them
+        return res.status(200).json({ 
+            success: true,
+            data: staffsOnLeave 
+        });
+    } catch (error) {
+        // If an error occurs, return an error response
+        return res.status(500).json({ 
+            success: false,
+            message: 'An error occurred while retrieving staffs on leave.' 
+        });
+    }
+  };
+  
+
+
 /* ********************** *\
 |END OF LEAVE REQUEST CONTROLLER
 \* ********************** */ 

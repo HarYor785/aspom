@@ -30,7 +30,9 @@ export const createAppraisal = async (req, res) => {
             user: userId,
             appraisal,
             achievement,
-            innovation
+            innovation,
+            hrComment: '',
+            mpComment: '',
         });
 
         // Save the new appraisal

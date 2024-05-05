@@ -248,6 +248,8 @@ export const getAllReports = async (req, res) => {
     }
 }
 
+
+
 // SINGLE STAFF REPORTS STATS
 export const userReportsStat = async (req, res) => {
     try {
@@ -336,6 +338,35 @@ export const userReportsStat = async (req, res) => {
         res.status(500).json({
             success: false,
             message: "Server error!"
+        })
+    }
+}
+
+export const getAdminReports = async (req, res) => {
+    try{
+        const {userId} = req.body.user;
+
+        const user = await AuthUser.findById(userId)
+
+        if(!user){
+            return res.status(403).json({
+                success: false,
+                message: "Authorization failed!"
+            })
+        }
+
+        const reports = await Reports.find()
+
+        res.status(200).json({
+            success: true,
+            data: reports
+        })
+
+    }catch(error){
+        console.log(error)
+        res.status(500).json({
+            success: false,
+            message: "Internal server error!"
         })
     }
 }

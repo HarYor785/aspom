@@ -40,6 +40,12 @@ const appraisalSchema = new mongoose.Schema({
     innovation: {
         type: String
     },
+    hrComment: {
+        type: String
+    },
+    mpComment: {
+        type: String
+    },
 },{timestamps: true})
 
 const Appraisal = mongoose.model('Appraisal', appraisalSchema)

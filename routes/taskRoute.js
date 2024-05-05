@@ -1,7 +1,7 @@
 import express from 'express'
 import authMiddleware from '../middleware/authMiddleware.js'
 import { createTask, getAllTasks, getUserTaskStatistics,
-  getUserTasks, updateTasks, updateTaskProgress } from '../controller/taskController.js'
+  getUserTasks, updateTasks, updateTaskProgress, getAdminTasks } from '../controller/taskController.js'
 import { uploadMiddleware } from '../utils/index.js'
 
 
@@ -11,9 +11,10 @@ router.post('/', uploadMiddleware, authMiddleware, (req, res)=>{
 })
 router.get('/user', authMiddleware, getUserTasks)
 // router.get('/', authMiddleware, getAllTasks)
+router.get('/staffs', authMiddleware, getAdminTasks)
+router.put('/progress/:id', authMiddleware, updateTaskProgress)
 router.get('/:month', authMiddleware, getUserTaskStatistics)
 // router.put('/:id', authMiddleware, updateTasks)
-router.put('/progress/:id', authMiddleware, updateTaskProgress)
 
 
 
