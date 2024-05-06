@@ -17,7 +17,6 @@ import { updateReportStatistics } from './controller/reportController.js'
 import { dailyAttendanceUpdate } from './controller/attendanceController.js'
 import Location from './models/locationModel.js'
 import cron from 'node-cron'
-import requestIp from 'request-ip'
 import axios from 'axios'
 
 dotenv.config()
@@ -48,34 +47,6 @@ app.use(express.static('public'))
 
 dbConnection()
 
-// app.use(requestIp.mw()) // Get client IP address
-// Define the whitelisted WiFi network IP address
-// const wifiNetworkIP = '192.168.11.21'; // Example IP address of the WiFi network
-const wifiNetworkIP = '172.20.10.8'; // Example IP address of the WiFi network
-
-// Middleware function to check the user's IP address against the WiFi network IP
-// const restrictToWiFiNetwork = (req, res, next) => {
-//   const userIP = req.ip
-  
-//     console.log('The user IP', userIP)
-
-//     if (userIP === wifiNetworkIP || userIP === `::ffff:${wifiNetworkIP}`) {
-//         // User's IP address matches the WiFi network IP
-//         next();
-//         // res.status(403).json({
-//         //     success: true,
-//         //     message: 'Access granted.'
-//         // });
-//     } else {
-//         // User's IP address does not match the WiFi network IP
-//         res.status(403).json({
-//             success: false,
-//             message: 'Access forbidden.'
-//         });
-//     }
-// };
-
-// app.use(restrictToWiFiNetwork)
 // Function to round coordinates to a specified precision
 const roundCoordinates = (coordinate) => {
     const precision = 4; // Adjust this precision as needed
@@ -85,7 +56,6 @@ const roundCoordinates = (coordinate) => {
 const isWithinThreshold = (userLatitude, dbLatitude, threshold) => {
     const latDifference = Math.abs(userLatitude - dbLatitude);
     const toRoundedUp = latDifference.toFixed(4)
-    console.log('latDifference', toRoundedUp)
     return toRoundedUp <= threshold;
 };
 
@@ -124,8 +94,6 @@ const fetchUserLocation = async (ipAddress) => {
     try {
         const response = await axios.get(`https://ipapi.co/${ipAddress}/json/`);
         const { latitude, longitude } = response.data;
-        console.log('IPAPI latitude', latitude)
-        console.log('IPAPI longitude', longitude)
         return { latitude, longitude };
     } catch (error) {
         console.error('Error fetching user location:', error);
@@ -152,7 +120,7 @@ const calculateDistance = (lat1, lon1, lat2, lon2) => {
 };
 
 app.get('/',(req, res)=>{
-    res.send(req.ip)
+    res.send('You are live')
 })
 
 app.use(router)

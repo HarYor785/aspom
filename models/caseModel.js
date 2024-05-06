@@ -8,6 +8,9 @@ const caseSchema = new mongoose.Schema({
     caseId: {
         type: String
     },
+    title:{
+        type: String,
+    },
     issue:{
         type: String,
     },
@@ -17,8 +20,17 @@ const caseSchema = new mongoose.Schema({
     status: {
         type: String,
         enum: ['Pending', 'Open', 'In Progress', 'Escalated', 'On Hold', 'Resolved', 'Closed'],
-        default: 'Pending',
-    }
+        default: 'Open',
+    },
+    attachment: {
+        type: String,
+    },
+    date: {
+        type: Date,
+    },
+    comment: [{
+        type: String,
+    }],
 },{timestamps: true})
 
 

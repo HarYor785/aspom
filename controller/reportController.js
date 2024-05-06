@@ -173,33 +173,40 @@ export const getAllReports = async (req, res) => {
 
         const users = await AuthUser.find();
 
-        const userStatisticsArray = await Promise.all(users.map(async (user) => {
-            const report = await Reports.findOne({ 'user': user._id})
+        const userStatisticsArray = [];
 
-            if(report && report.reports){
+        for (const user of users) {
+            const reports = await Reports.findOne({ user: user._id, month: month });
+
+            if (reports && reports.reports) {
+                const holidays = await Holiday.find();
+
+                const startOfMonth = moment(month, 'MM').startOf('month');
+                const endOfMonth = moment(month, 'MM').endOf('month');
                 const currentDayOfMonth = moment().date();
-                const startOfMonth = moment(month, 'MM').startOf('month'); // Use the month from req.body
-                const endOfMonth = moment(month, 'MM').endOf('month'); // Use the month from req.body
-            
+                const currentMonth = moment().format('MM')
+
                 let totalReportSubmitted = 0;
                 let totalMissed = 0;
                 let totalHolidays = 0;
                 let totalWorkingDays = 0;
 
-                const holidays = await Holiday.find();
-            
                 for (let day = startOfMonth.clone(); day <= endOfMonth; day.add(1, 'day')) {
                     const isWeekend = day.day() === 0 || day.day() === 6; // Sunday is 0, Saturday is 6
-                    const taskDay = moment(day);
-                    const reportExists = report.reports.some(rep => moment(rep.date).isSame(taskDay, 'day'));
-                    const isHoliday = holidays.some(holiday => moment(holiday.date).isSame(taskDay, 'day'));
+                    const isHoliday = holidays.some(holiday => moment(holiday.date).isSame(day, 'day'));
+                    const reportExists = reports.reports.some(report => moment(report.date).isSame(day, 'day'));
 
                     if (!isWeekend && !isHoliday) {
                         totalWorkingDays++;
                     }
         
                     if (!isWeekend && !isHoliday && !reportExists) {
-                        totalMissed++;
+                        // Exclude counting missed tasks for the current day
+                        if (currentMonth === month && day.date() !== currentDayOfMonth) {
+                            totalMissed++;
+                        }else if(currentMonth !== month){
+                            totalMissed++
+                        }
                     }
 
                     if (reportExists) {
@@ -209,13 +216,13 @@ export const getAllReports = async (req, res) => {
                     if (isHoliday) {
                         totalHolidays++;
                     }
-            
-                    if (day.date() === currentDayOfMonth) {
+
+                    if (currentMonth === month && day.date() === currentDayOfMonth) {
                         break; // Stop loop when reaching the current day
                     }
                 }
 
-                return {
+                userStatisticsArray.push({
                     user: {
                         _id: user._id,
                         firstName: user.firstName,
@@ -228,11 +235,10 @@ export const getAllReports = async (req, res) => {
                     totalMissed,
                     totalHolidays,
                     totalWorkingDays,
-                    createdAt: report.createdAt
-                };
+                    createdAt: reports.createdAt
+                });
             }
-        
-        }));
+        }
 
         res.status(200).json({
             success: true,
@@ -250,7 +256,7 @@ export const getAllReports = async (req, res) => {
 
 
 
-// SINGLE STAFF REPORTS STATS
+// SINGLE STAFF REPORTS STATS (HAVE NOT IMPLEMENT)
 export const userReportsStat = async (req, res) => {
     try {
         const {userId} = req.body.user;

@@ -1,5 +1,6 @@
 import AuthUser from "../models/authModel.js"
 import Cases from "../models/caseModel.js"
+import {sendCaseMail} from '../utils/mailer.js'
 import {v4 as uuidv4} from 'uuid'
 
 const uuid = uuidv4()
@@ -7,8 +8,9 @@ const uuid = uuidv4()
 export const submitCase = async (req, res) => {
     try {
         const {userId} = req.body.user
-        const { issue, department} = req.body
+        const { title, issue, department, status, date} = req.body
         const caseId = uuid.slice(0, 6)
+        const file = req.file
 
         const user = await AuthUser.findById(userId)
 
@@ -22,11 +24,24 @@ export const submitCase = async (req, res) => {
         const createCase = new Cases({
             user: userId,
             caseId,
+            title,
             issue,
             department,
+            status: status ? status : 'Open',
+            attachment: file ? file : '',
+            date,
+            comment: []
         })
 
         await createCase.save()
+
+        const users = await AuthUser.find({
+            department: createCase.department
+        })
+
+        await Promise.all(users?.map(async(staff)=>{
+            await sendCaseMail(staff.email, createCase)
+        }))
 
         res.status(200).json({
             success: true,
@@ -46,7 +61,7 @@ export const submitCase = async (req, res) => {
 export const updateCase = async (req, res)=>{
     try {
         const {userId} = req.body.user
-        const { issue, department, status} = req.body
+        const { comment, status} = req.body
         const {caseId} = req.params
 
         const user = await AuthUser.findById(userId)
@@ -67,18 +82,10 @@ export const updateCase = async (req, res)=>{
             })
         }
 
-        let updatedCase;
-
-        if(status){
-            updatedCase = await Cases.findByIdAndUpdate(caseId,{
-                status: status
-            }, {new: true})
-        }else{
-            updatedCase = await Cases.findByIdAndUpdate(caseId,{
-                issue, 
-                department,
-            }, {new: true})
-        }
+        const updatedCase = await Cases.findByIdAndUpdate(caseId,{
+            status: status,
+            $push: {comment: comment}
+        }, {new: true})
 
         res.status(200).json({
             success: true,
@@ -146,7 +153,7 @@ export const allCaseController = async (req, res) => {
 
         const getCase = await Cases.find().populate({
             path: 'user',
-            select: 'firstName lastName email'
+            select: 'firstName lastName email staffId department'
         })
 
         if(!getCase){

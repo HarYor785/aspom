@@ -310,3 +310,48 @@ export const sendResetPassMail = async (user, res)=>{
         })
     }
 }
+
+export const sendCaseMail = async (email, newCase)=>{
+    try {
+        const mailOption = {
+            from: 'Aspom Travels Agency',
+            to: email,
+            subject: `New Case Assigned: ${newCase?.title}`,
+            html:`<div style="display:flex;flex-direction: column;
+            gap: 0.2rem;align-items: start;background: #fff;padding: 0.5rem;">
+                <h3 style="font-weight: bolder;">Dear ${newCase?.department}</h3>
+                    <p>
+                        A new case has been assigned to your department.
+                    </p> 
+
+                    <p>Please review the case and take appropriate action.</p>
+
+                    <p>
+                        If you encounter any issues or have any questions, please don't hesitate
+                        to contact the IT Department for assistance at <strong>it@aspomtravels.com</strong>
+                    </p> 
+                    <div style="display: flex; flex-direction: column;padding-top: 1rem;">
+                        <p>Best regards,</p>
+                        <p>IT Team</p>
+                        <img src={${APP__URL}/assets/Aspom-Logo.png} alt="Logo" 
+                        style="width: 6rem; height: 6rem;"/>
+                        <h3>ASPOM TRAVEL AGENCY</h3>
+                        <p><strong>Head Office:</strong/> 69 Admiralty Way, Lekki Phase 1, Lagos Nigeria</p>
+                        <p><strong>Abuja Office:</strong> Aiivon Innovation Hub, 167 Adetokunbo Ademola Cresent Wuse, Abuja.</p>
+                        <p><strong>Ikeja Office:</strong> Pentagon Plaza, 23, Opebi Road, Ikeja, Lagos, Nigeria</p>
+                    </div>
+            </div>`
+        }
+
+        transporter.sendMail(mailOption)
+        .then(()=>{
+            console.log('Case mail sent')
+        })
+        .catch((error)=>{
+            console.log(error)
+        })
+
+    } catch (error) {
+        console.log(error)
+    }
+}

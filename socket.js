@@ -7,7 +7,7 @@ const initSocket = (app) => {
     const expressServer = createServer(app);
     const io = new Server(expressServer, {
         cors: {
-            origin: ["https://hrms.aspomportal.com", "https://admin.aspomportal.com"]
+            origin: ["https://hrms.aspomportal.com", "https://admin.aspomportal.com", "http://localhost:3000", "http://localhost:3001"]
         }
     });
     // const io = new Server(expressServer, {
