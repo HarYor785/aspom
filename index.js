@@ -75,7 +75,7 @@ app.post('/access-location', async (req, res) => {
             const roundedUserLatitude = roundCoordinates(userLocation.latitude);
             const roundedDBLatitude = roundCoordinates(location.latitude);
 
-            const withinThreshold = isWithinThreshold(roundedUserLatitude, roundedDBLatitude, 0.001); // Adjust threshold as needed
+            const withinThreshold = isWithinThreshold(roundedUserLatitude, roundedDBLatitude, 0.003); // Adjust threshold as needed
             return withinThreshold;
         }));
 
