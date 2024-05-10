@@ -25,11 +25,21 @@ const caseSchema = new mongoose.Schema({
     attachment: {
         type: String,
     },
-    date: {
+    dueDate: {
         type: Date,
     },
     comment: [{
-        type: String,
+        user: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'AuthUser'
+        },
+        text:{
+            type: String
+        },
+        date: {
+            type: Date,
+            default: Date.now()
+        },
     }],
 },{timestamps: true})
 

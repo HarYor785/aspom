@@ -8,9 +8,11 @@ const uuid = uuidv4()
 export const submitCase = async (req, res) => {
     try {
         const {userId} = req.body.user
-        const { title, issue, department, status, date} = req.body
+        const { title, issue, department, status, dueDate} = req.body
         const caseId = uuid.slice(0, 6)
         const file = req.file
+
+        let filename = ''
 
         const user = await AuthUser.findById(userId)
 
@@ -21,6 +23,9 @@ export const submitCase = async (req, res) => {
             })
         }
 
+        if(file){
+            filename = file.filename
+        }
         const createCase = new Cases({
             user: userId,
             caseId,
@@ -28,8 +33,8 @@ export const submitCase = async (req, res) => {
             issue,
             department,
             status: status ? status : 'Open',
-            attachment: file ? file : '',
-            date,
+            attachment: filename,
+            dueDate,
             comment: []
         })
 
@@ -61,7 +66,7 @@ export const submitCase = async (req, res) => {
 export const updateCase = async (req, res)=>{
     try {
         const {userId} = req.body.user
-        const { comment, status} = req.body
+        const { commentUser, comment, status} = req.body
         const {caseId} = req.params
 
         const user = await AuthUser.findById(userId)
@@ -82,16 +87,30 @@ export const updateCase = async (req, res)=>{
             })
         }
 
-        const updatedCase = await Cases.findByIdAndUpdate(caseId,{
-            status: status,
-            $push: {comment: comment}
-        }, {new: true})
+        if(status){
+            const updatedCase = await Cases.findByIdAndUpdate(caseId,{
+                status: status,
+            }, {new: true})
+    
+            res.status(200).json({
+                success: true,
+                message: 'Case updated succesfully!',
+                data: updatedCase
+            })
 
-        res.status(200).json({
-            success: true,
-            message: 'Case updated succesfully!',
-            data: updatedCase
-        })
+        }else{
+
+            existCase.comment.push({user: commentUser, text: comment})
+            
+            const updatedCase = await existCase.save()
+    
+            res.status(200).json({
+                success: true,
+                message: 'Case updated succesfully!',
+                data: updatedCase
+            })
+        }
+
 
     } catch (error) {
         console.log(error)
@@ -153,8 +172,11 @@ export const allCaseController = async (req, res) => {
 
         const getCase = await Cases.find().populate({
             path: 'user',
-            select: 'firstName lastName email staffId department'
-        })
+            select: 'firstName lastName email role staffId department'
+        }).populate({
+            path: 'comment.user',
+            select: 'firstName lastName email role staffId department'
+        }).sort({createdAt: -1})
 
         if(!getCase){
             return res.status(403).json({

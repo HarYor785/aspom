@@ -28,7 +28,12 @@ const PORT = process.env.PORT || 6000
 // Initialize socket.io and get the express server
 const expressServer = initSocket(app);
 
-app.use(cors())
+const corsOptions = {
+    origin: ["https://hrms.aspomportal.com", "https://admin.aspomportal.com", "http://localhost:3000", "http://localhost:3001"],
+    optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
+}
+
+app.use(cors(corsOptions))
 app.use(helmet())
 app.use(xss())
 app.use(compression())
